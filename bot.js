@@ -1,69 +1,75 @@
-const mineflayer = require("mineflayer");
+const mineflayer = require('mineflayer');
+const express = require('express');  // ✅ Added for uptime hosting
+const app = express();
 
-// === BOT SETTINGS ===
-const botOptions = {
-  host: "your.server.ip",   // put server IP
-  port: 25565,              // change if server uses custom port
-  username: "BotName123",   // bot name (if cracked server)
-  version: false            // false = auto-detect version
-};
+// === CONFIGURATION ===
+const HOST = 'play.applemc.fun'; // Server IP
+const PORT = 25565;              // Default Minecraft port
+const USERNAME = 'MesolexoGoat'; // Bot username (cracked)
+const PASSWORD = 'password7678'; // Bot login password
+const VERSION = '1.20.1';        // Minecraft version
 
-// === BOT CREATOR FUNCTION ===
 function createBot() {
-  const bot = mineflayer.createBot(botOptions);
+    const bot = mineflayer.createBot({
+        host: HOST,
+        port: PORT,
+        username: USERNAME,
+        auth: 'offline',
+        version: VERSION
+    });
 
-  // ✅ On Login
-  bot.on("login", () => {
-    console.log("[BOT] Logged in successfully!");
-    // Wait and then send a greeting
-    setTimeout(() => {
-      bot.chat("Hello everyone!");
-    }, 15000); // send after 15 seconds
-  });
+    bot.on('login', () => {
+        console.log(`[BOT] Connected to ${HOST}, logging in...`);
+        setTimeout(() => {
+            bot.chat(`/login ${PASSWORD}`);
+        }, 1500);
+    });
 
-  // ✅ AntiBot bypass - random movements
-  bot.on("spawn", () => {
-    console.log("[BOT] Spawned in the world!");
+    bot.on('spawn', () => {
+        console.log(`[BOT] Spawned in hub. Going to Banana realm...`);
 
-    // Move around randomly every 20s
-    setInterval(() => {
-      const yaw = Math.random() * Math.PI * 2;
-      bot.look(yaw, 0, false);
-      bot.setControlState("jump", true);
+        // Step 1: Go to Banana realm
+        setTimeout(() => {
+            bot.chat('/server Banana');
+        }, 3000);
 
-      setTimeout(() => {
-        bot.setControlState("jump", false);
-      }, 1000);
+        // Step 2: Warp AFK after entering Banana
+        setTimeout(() => {
+            bot.chat('/warp AFK');
+        }, 7000);
 
-      console.log("[BOT] Moving randomly to look human");
-    }, 20000);
+        // Step 3: Anti-AFK small movements
+        setInterval(() => {
+            bot.setControlState('left', true);
+            setTimeout(() => bot.setControlState('left', false), 500);
+        }, 15000);
+    });
 
-    // Chat randomly every 30–60s
-    setInterval(() => {
-      const msgs = ["hi", "hello", "how are you?", "nice server!", "gg"];
-      const msg = msgs[Math.floor(Math.random() * msgs.length)];
-      bot.chat(msg);
-      console.log("[BOT] Sent chat:", msg);
-    }, Math.floor(Math.random() * 30000) + 30000);
-  });
+    bot.on('message', msg => {
+        console.log(`[CHAT] ${msg.toString()}`);
+    });
 
-  // ✅ Handle Kick
-  bot.on("kicked", (reason) => {
-    console.log("[BOT] Kicked:", reason);
-    console.log("[BOT] Reconnecting in 2 minutes...");
-    setTimeout(createBot, 120000); // wait 2 mins before reconnecting
-  });
+    bot.on('kicked', (reason, loggedIn) => {
+        console.log(`[BOT] Kicked: ${reason}`);
+    });
 
-  // ✅ Handle End
-  bot.on("end", () => {
-    console.log("[BOT] Disconnected. Reconnecting in 2 minutes...");
-    setTimeout(createBot, 120000);
-  });
+    bot.on('error', err => {
+        console.error(`[ERROR] ${err}`);
+    });
 
-  bot.on("error", (err) => {
-    console.log("[BOT] Error:", err.message);
-  });
+    bot.on('end', () => {
+        console.log(`[BOT] Disconnected. Reconnecting in 5 seconds...`);
+        setTimeout(createBot, 5000);
+    });
 }
 
-// === START THE BOT ===
+// === Keep Alive Webserver for Render / UptimeRobot ===
+app.get("/", (req, res) => {
+  res.send("Bot is running 24/7!");
+});
+
+const WEB_PORT = process.env.PORT || 3000;
+app.listen(WEB_PORT, () => console.log(`Web server running on port ${WEB_PORT}`));
+
+// Start bot
 createBot();
